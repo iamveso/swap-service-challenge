@@ -6,6 +6,7 @@ from app.pool_loader import PoolLoader
 from app.path_finder import PathFinder
 from app.utils import save_graph
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from app.settings import redis_client
 
 # Create instances
 pool_loader = PoolLoader()
@@ -23,8 +24,9 @@ async def get_context() -> Context:
 
 async def jobs_update_assets():
     pools = await pool_loader.fetch_pools()
-    print(pools)
-    path_finder.update_pools(pools)
+    if pools:
+        redis_client.flushdb()
+        path_finder.update_pools(pools)
 
 scheduler = AsyncIOScheduler()
 scheduler.add_job(jobs_update_assets, "interval", seconds=120)
@@ -41,7 +43,9 @@ app.include_router(graphql_app, prefix="/graphql")
 async def startup_event():
     # Initial pool load
     pools = await pool_loader.fetch_pools()
-    path_finder.update_pools(pools)
+    if pools:
+        path_finder.update_pools(pools)   
+    scheduler.start()
     
 @app.get("/graph/image")
 def get_graph_image():

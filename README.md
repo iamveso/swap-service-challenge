@@ -7,7 +7,7 @@
 5. Go to localhost:8000/graphql to view the graphql endpoints and localhost:8000/graph/image to see a visual representation of the graph constructed from the data
 
 # ARCHITECTURE #
-Overall the project has a very simple architecture. The core functionality is placed in an "app" with 6 files in total, each handling a specific aspect of the overall solution. Then there is the main.py file that lives outside the app folder together with other files listed out in this section
+Overall the project has a very simple architecture. The core functionality is placed in an "app" with each file handling a specific aspect of the overall solution. Then there is the main.py file that lives outside the app folder together with other files listed out in this section
 
 # main.py
 Handles initialization and running the application. Background processes, fastapi init and strawberry  are all handled here. it is important for this file ot remain small and easily readable
@@ -58,3 +58,17 @@ Also the response from the find_route endpoint returns the best path as a list o
 
 # swap algorithm
 The problem after being stored in the required data strcutrue is essentially a shortest path problem. There are a lot of ways to solve this issue but dijkstra's algorithm is sufficient. There is the possibility of using bellman-ford because of negative weights but I ultimately decided against that since negative weights are not expected and if they do appear then it can be exploited for infinite swap potential which can be an issue
+
+# caching
+An easy way to simulate caching is using in memory information. whenever the application is run, the pools and graph information can be stored as class fields which will make them live as long as the program works. There are a few issues with this, first being that as the number of requests increase, the app get slower and uses more memory. The second being that it joins storage with path finding. Also updating the information can become complex in large scales since while updating we should not read from the same memory. finally there are faster and more efficient methods which allow very fast reads of stored information while also making updating the information easy. redis is a popular choice. On extrememly large scales there *might* be a need to also use a traditional database but considering we need are not storing any long term data this is unlikely.
+
+The caching strategy used here is to simply cache the pool data returned from the endpoint. when we call the available_tokens or find_route endpoints we just fetch this information from the cache. This eliminates (unless at the start of the program) the need to call the endpoint manually and this will be handled by the background process
+
+# consideraions
+1. for caching there are more sophisticated ways to handle this however this is a simple and efficient way that makes sure the response and graph are in sync (since the graph is computed from the pool list). This improves the performance enough and even at scale one of the largest bottlenecks is always external api calls.
+
+2. If there are any deviations in the expectations of the api then that data is ignored. eg when getting the tokens name instead of USDT / WETH we may get USDT / WETH / USDC which does not conform to the quote and base token structure. a better approach will be to find which is actually the base token and the quote token but that will complicate the project a lot more.
+
+3. Using async to run the shortest path computation also helps free computer resources to do other things while the computation is going on instead of blocking the main thread. However since the computation is a function in an async function, I would go for a more optimal algorithm such as A* instead.
+
+4. Cache best route results so we just read from the cache instead of running the computation again. To make sure we are not giving stale data, the cache is flushed whenever we get new data from the api
