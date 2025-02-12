@@ -1,0 +1,60 @@
+# INSTALLATION PROCESS #
+
+1. To install ensure you have python3 installed on your device
+2. create a virtual environment (preferrable but not necessary) using the command [python -m venv .<venv>] where name is what you want to name your virtual environment
+3. run the command [ pip3 install -r requirements.txt ]. This will install all dependencied of the project
+4. to start the server, after installing dependencies, run the command [ uvicorn main:app ]
+5. Go to localhost:8000/graphql to view the graphql endpoints and localhost:8000/graph/image to see a visual representation of the graph constructed from the data
+
+# ARCHITECTURE #
+Overall the project has a very simple architecture. The core functionality is placed in an "app" with 6 files in total, each handling a specific aspect of the overall solution. Then there is the main.py file that lives outside the app folder together with other files listed out in this section
+
+# main.py
+Handles initialization and running the application. Background processes, fastapi init and strawberry  are all handled here. it is important for this file ot remain small and easily readable
+
+# settings.py
+Any application setting is put here. usually this would also handle reading variables from an .env file should one be needed
+
+# models.py
+All fastapi models are declared in this file. Currently this only includes Token and Pool. as the application grows larger more models will need to be stored and the possibility of breaking the file into smaller files under the models folder should be considered
+
+# schema.py
+Similar to models.py but for the decalring models relating to the graphql endpoint. Graphql queries and mutations are also handled in this file. Like models.py as the project grows larger and more endpoints are added breaking up the file to smaller files under the schema folder will be more appropriate
+
+# utils.py
+Handles functions that may be needed across the app to handle basic utilities but is not specific to the core solution of the app itself. an example is string manipulation to parse the token names
+
+# pool_loader.py
+This is one of the most important parts of the project. The project relies heavily on the accuracy of information stored by this file. THis handles calling and parsing the information returned from coingecko's endpoint. 
+
+# path_finder.py
+Another very crucial piece of the app is located in this file. Here the algorithm for storing the information received from pool_loader in a graph and finding the best swap path is written. It also handles updating the graph with new pool data as this needs to be a frequent routine
+
+Other parts of the folder include
+# static
+Stores the png file displayed on the rest endpoint to view the graph
+
+# requirements.txt
+a text file that lists all the dependencies of the project
+
+
+# SOME TECHNICAL DECISIONS
+# why use fastapi instead of django or flask
+The simple answer is fastapi boast of being the fastest python framework. But also, it is seamless to work with async using fastapi and using pydantic a lot of validations are handled making it easier to focus on the solution itself
+
+# tokens
+The Token data structure stores the names of all the coins in a particular pool as a set. Ideally it would be nice to store the ID's also but that will require a dict and dicts cannot be used as set values. This is further complicated by the fact that some times similar swap transactions with little to no difference are repeated in the response. e.g USDT / WETH appearing twice and *MAY* have different id's which would cause problems when generating the graph.
+
+# networkx
+Networkx is a popular python library for handling graph related problems. Writing everything from scratch is also viable but it takes time and may not be as efficient as battle tested solutions like networkx. Networkx also comes with enough flexibility that allows swapping algorithms should the need arise
+
+# data structures
+One of the trickiest part of the project was determing the optimal way to store information. There are only two things we need; Tokens and Pools. A token is essentially the name of a crypto coin. A pool holds two tokens, their price relative to each other (which is approximately the inverse of themselves) and the fee for carrying out the swap (should there be one).
+Tokens are stored in a set list which is returned by the available_tokens endpoint in graphql
+Pools are the main structure which is used to create the nodes, edges and weight ov the graph
+The algorithm used for constructing the weights is written in the code [path_finder.py]
+
+Also the response from the find_route endpoint returns the best path as a list of tokens and the overall rate. The list may have multiple tokens starting with the "from" token and ending with the "to" token. Tokens inbetween are intermediary coins that may need to be swapped to get the optimal price for reaching the "to" token. The rate is how many "to" tokens you can get from swapping 1 "from" token using this path.
+
+# swap algorithm
+The problem after being stored in the required data strcutrue is essentially a shortest path problem. There are a lot of ways to solve this issue but dijkstra's algorithm is sufficient. There is the possibility of using bellman-ford because of negative weights but I ultimately decided against that since negative weights are not expected and if they do appear then it can be exploited for infinite swap potential which can be an issue

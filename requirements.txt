@@ -1,0 +1,8 @@
+fastapi
+strawberry-graphql
+redis
+networkx
+httpx
+uvicorn
+matplotlib
+apscheduler
