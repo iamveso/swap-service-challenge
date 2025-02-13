@@ -25,7 +25,6 @@ async def get_context() -> Context:
 async def jobs_update_assets():
     pools = await pool_loader.fetch_pools()
     if pools:
-        redis_client.flushdb()
         path_finder.update_pools(pools)
 
 scheduler = AsyncIOScheduler()

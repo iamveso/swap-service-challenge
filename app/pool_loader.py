@@ -63,6 +63,7 @@ class PoolLoader:
                     ))
                 except (ValueError, TypeError):
                     continue
+            redis_client.flushdb()
             pools_json = json.dumps([pool.model_dump() for pool in pools])
             redis_client.set(self.POOL_CACHE_KEY, pools_json)
             return pools
