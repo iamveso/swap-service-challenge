@@ -3,8 +3,9 @@
 1. To install ensure you have python3 installed on your device
 2. create a virtual environment (preferrable but not necessary) using the command [python -m venv .<venv>] where name is what you want to name your virtual environment
 3. run the command [ pip3 install -r requirements.txt ]. This will install all dependencied of the project
-4. to start the server, after installing dependencies, run the command [ uvicorn main:app ]
-5. Go to localhost:8000/graphql to view the graphql endpoints and localhost:8000/graph/image to see a visual representation of the graph constructed from the data
+4. Make sure you have redis installed on your device too
+5. to start the server, after installing dependencies, run the command [ uvicorn main:app ]
+6. Go to localhost:8000/graphql to view the graphql endpoints and localhost:8000/graph/image to see a visual representation of the graph constructed from the data
 
 # ARCHITECTURE
 
